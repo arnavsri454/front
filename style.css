@@ -1,0 +1,149 @@
+ /* Reset and global styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-size: 1rem;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    background-color: #f0f2f5;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Container */
+main {
+    width: 100%;
+    max-width: 400px;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
+}
+
+/* Chat List (User and Room) */
+.user-list, .room-list {
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Chat Display (Conversation Area) */
+.chat-display {
+    background-color: #f7f9fc;
+    padding: 10px;
+    overflow-y: auto;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Message styles */
+.post {
+    max-width: 70%;
+    padding: 10px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    word-wrap: break-word;
+    position: relative;
+}
+
+.post--left {
+    background-color: #dcf8c6;
+    align-self: flex-start;
+    color: #333;
+}
+
+.post--right {
+    background-color: #e0e0e0;
+    align-self: flex-end;
+    color: #333;
+}
+
+.post__header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #555;
+}
+
+.post__header--user {
+    background-color: #007bff;
+    color: #fff;
+    border-radius: 12px 12px 0 0;
+}
+
+.post__header--reply {
+    background-color: #6c757d;
+    color: #fff;
+    border-radius: 12px 12px 0 0;
+}
+
+/* Image styling within messages */
+.shared-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-top: 5px;
+}
+
+/* Typing Indicator */
+.activity {
+    padding: 10px;
+    font-size: 0.9rem;
+    font-style: italic;
+    color: #888;
+}
+
+/* Message Form */
+.form-msg, .form-join, .form-upload {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #ddd;
+    background-color: #fff;
+}
+
+.form-join {
+    border-bottom: 1px solid #ddd;
+}
+
+/* Input fields */
+input[type="text"], input[type="file"], button {
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    outline: none;
+}
+
+input[type="text"], input[type="file"] {
+    flex-grow: 1;
+    margin-right: 8px;
+}
+
+button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+/* Additional styling for image upload button */
+.form-upload button {
+    flex-grow: 0;
+    padding: 8px 12px;
+}
