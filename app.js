@@ -8,9 +8,8 @@ const messageForm = document.querySelector('.form-msg');
 const uploadForm = document.querySelector('.form-upload');
 
 // Initialize Socket.IO connection
-const socket = io('https://back-cxwc.onrender.com', {
-    withCredentials: true  // Include credentials if needed
-});
+ const socket = io('https://back-cxwc.onrender.com', { withCredentials: true });
+
 
 socket.on('connect', () => {
     console.log('Successfully connected to the server');
