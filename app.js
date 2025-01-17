@@ -9,6 +9,7 @@ const uploadForm = document.querySelector('.form-upload');
 
 // Initialize Socket.IO connection
  const socket = io('https://back-cxwc.onrender.com', { withCredentials: true });
+const uploadUrl = 'https://back-cxwc.onrender.com/upload'; // Backend upload URL
 
 
 
