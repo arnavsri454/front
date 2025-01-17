@@ -8,7 +8,7 @@
 }
 
 body {
-    background-color: #f0f2f5;
+    background: linear-gradient(to bottom right, #007bff, #6a11cb); /* Gradient colors */
     color: #333;
     display: flex;
     justify-content: center;
@@ -20,7 +20,7 @@ body {
 main {
     width: 100%;
     max-width: 400px;
-    background-color: #fff;
+    background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white for better readability */
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
