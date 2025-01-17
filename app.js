@@ -2,6 +2,10 @@ const socket = io('https://back-cxwc.onrender.com'); // Backend URL
 let username = '';
 let currentRoom = '';
 
+socket.on('connect_error', () => {
+  alert('The server is currently unavailable. Please try again later.');
+});
+
 document.querySelector('.form-join').addEventListener('submit', (event) => {
     event.preventDefault();
     username = document.getElementById('name').value;
