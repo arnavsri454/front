@@ -11,6 +11,10 @@ const uploadForm = document.querySelector('.form-upload');
  const socket = io('https://back-cxwc.onrender.com', { withCredentials: true });
 
 
+
+socket.emit('joinRoom', { name, room });
+console.log(`Emitted joinRoom: name=${name}, room=${room}`);
+
 socket.on('connect', () => {
     console.log('Successfully connected to the server');
 });
