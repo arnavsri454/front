@@ -15,36 +15,32 @@
 <body>
     <main>
         <!-- Join Room Form -->
-        <form class="form-join">
+        <form class="form-join" id="joinRoomForm">
             <input type="text" id="name" maxlength="8" placeholder="Your name" size="5" required>
             <input type="text" id="room" placeholder="Chat room" size="5" required>
-             
             <button id="join" type="submit">Join</button>
         </form>
 
-        <!-- Display Chat Messages -->
-        <ul class="chat-display"></ul>
+        <!-- Chat Display -->
+        <ul class="chat-display" id="chatDisplay"></ul>
 
         <!-- Display Users in the Current Room -->
-        <p class="user-list"></p>
-
-        <!-- Display Available Rooms -->
-        <p class="room-list"></p>
+        <p class="user-list" id="userList"></p>
 
         <!-- Typing Indicator -->
-        <p class="activity"></p>
+        <p class="activity" id="typingIndicator"></p>
 
         <!-- Send Message Form -->
-        <form class="form-msg">
+        <form class="form-msg" id="messageForm">
             <input type="text" id="message" placeholder="Your message" required>
             <button type="submit">Send</button>
         </form>
-        <form class="form-upload">
-            <input type="file" id="imageUpload" accept="image/*" />
+
+        <!-- Upload Image Form -->
+        <form class="form-upload" id="imageUploadForm">
+            <input type="file" id="imageUpload" accept="image/*">
             <button type="submit">Send Image</button>
         </form>
-        
-        
     </main>
 </body>
 
