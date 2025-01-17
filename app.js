@@ -54,4 +54,8 @@ document.querySelector('.form-upload').addEventListener('submit', async (event) 
         console.error('Error uploading image:', error);
     }
 });
+setInterval(() => {
+  fetch('https://your-backend-url.onrender.com/ping')
+    .catch((err) => console.error('Backend ping failed:', err));
+}, 5 * 60 * 1000); // Ping every 5 minutes
 
