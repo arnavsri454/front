@@ -15,17 +15,17 @@
 <body>
     <main>
         <!-- Sidebar: Active Members -->
-        <aside id="sidebar">
+        <aside id="active-members-container">
             <h4>Active Members</h4>
-            <ul id="activeMembersList"></ul>
+            <ul id="active-members"></ul>
         </aside>
 
         <!-- Chat Container -->
-        <section id="chatContainer">
+        <section id="chat-container">
             <!-- Join Room Form -->
             <form class="form-join" id="joinRoomForm">
-                <input type="text" id="name" maxlength="8" placeholder="Your name" size="5" required>
-                <input type="text" id="room" placeholder="Chat room" size="5" required>
+                <input type="text" id="name" maxlength="8" placeholder="Your name" required>
+                <input type="text" id="room" placeholder="Chat room" required>
                 <button id="join" type="submit">Join</button>
             </form>
 
@@ -33,7 +33,7 @@
             <ul class="chat-display" id="chatDisplay"></ul>
 
             <!-- Typing Indicator -->
-            <p class="activity" id="typingIndicator"></p>
+            <p id="typing-indicator"></p>
 
             <!-- Send Message Form -->
             <form class="form-msg" id="messageForm">
@@ -51,3 +51,5 @@
 </body>
 
 </html>
+
+
