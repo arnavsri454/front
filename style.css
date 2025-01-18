@@ -1,4 +1,4 @@
- /* Reset and global styles */
+/* Reset and global styles */
 * {
     margin: 0;
     padding: 0;
@@ -16,28 +16,62 @@ body {
     height: 100vh;
 }
 
-/* Container */
+/* Main container */
 main {
-    width: 100%;
-    max-width: 400px;
+    display: flex;
+    width: 90%;
+    max-width: 800px;
     background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent white for better readability */
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    display: flex;
-    flex-direction: column;
     height: 90vh;
 }
 
-/* Chat List (User and Room) */
-.user-list, .room-list {
+/* Sidebar for active members */
+#active-members-container {
+    width: 30%; /* Adjust sidebar width */
+    background-color: #fff;
     padding: 15px;
-    border-bottom: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#active-members-container h4 {
+    font-size: 1.2rem;
     font-weight: bold;
     color: #333;
 }
 
-/* Chat Display (Conversation Area) */
+#active-members {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto; /* Enable scrolling for long member lists */
+    max-height: calc(100% - 50px);
+}
+
+#active-members li {
+    padding: 8px 10px;
+    border-bottom: 1px solid #ddd;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+#active-members li:last-child {
+    border-bottom: none;
+}
+
+/* Chat container */
+#chat-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Chat display (Conversation area) */
 .chat-display {
     background-color: #f7f9fc;
     padding: 10px;
@@ -48,6 +82,15 @@ main {
     gap: 10px;
 }
 
+/* Typing indicator */
+#typing-indicator {
+    font-style: italic;
+    color: #555;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-top: 1px solid #ddd;
+}
+
 /* Message styles */
 .post {
     max-width: 70%;
@@ -56,7 +99,6 @@ main {
     font-size: 0.9rem;
     line-height: 1.4;
     word-wrap: break-word;
-    position: relative;
 }
 
 .post--left {
@@ -71,54 +113,14 @@ main {
     color: #333;
 }
 
-.post__header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.8rem;
-    color: #555;
-}
-
-.post__header--user {
-    background-color: #007bff;
-    color: #fff;
-    border-radius: 12px 12px 0 0;
-}
-
-.post__header--reply {
-    background-color: #6c757d;
-    color: #fff;
-    border-radius: 12px 12px 0 0;
-}
-
-/* Image styling within messages */
-.shared-image {
-    max-width: 100%;
-    height: auto;
-    border-radius: 8px;
-    margin-top: 5px;
-}
-
-/* Typing Indicator */
-.activity {
-    padding: 10px;
-    font-size: 0.9rem;
-    font-style: italic;
-    color: #888;
-}
-
-/* Message Form */
-.form-msg, .form-join, .form-upload {
+/* Form and input fields */
+.form-msg, .form-upload {
     display: flex;
     padding: 10px;
-    border-top: 1px solid #ddd;
     background-color: #fff;
+    border-top: 1px solid #ddd;
 }
 
-.form-join {
-    border-bottom: 1px solid #ddd;
-}
-
-/* Input fields */
 input[type="text"], input[type="file"], button {
     padding: 8px;
     border-radius: 8px;
@@ -140,34 +142,4 @@ button {
 
 button:hover {
     background-color: #0056b3;
-}
-#active-members-container {
-    padding: 10px;
-    background-color: #fff;
-    border-right: 1px solid #ddd;
-}
-
-#active-members {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-}
-
-#active-members li {
-    padding: 5px 0;
-    border-bottom: 1px solid #ddd;
-    font-size: 0.9rem;
-}
-
-#typing-indicator {
-    font-style: italic;
-    color: #555;
-    padding: 5px 10px;
-    margin-bottom: 10px;
-}
-
-/* Additional styling for image upload button */
-.form-upload button {
-    flex-grow: 0;
-    padding: 8px 12px;
 }
