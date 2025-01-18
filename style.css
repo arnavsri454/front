@@ -141,6 +141,30 @@ button {
 button:hover {
     background-color: #0056b3;
 }
+#active-members-container {
+    padding: 10px;
+    background-color: #fff;
+    border-right: 1px solid #ddd;
+}
+
+#active-members {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+#active-members li {
+    padding: 5px 0;
+    border-bottom: 1px solid #ddd;
+    font-size: 0.9rem;
+}
+
+#typing-indicator {
+    font-style: italic;
+    color: #555;
+    padding: 5px 10px;
+    margin-bottom: 10px;
+}
 
 /* Additional styling for image upload button */
 .form-upload button {
