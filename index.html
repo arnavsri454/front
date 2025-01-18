@@ -14,33 +14,39 @@
 
 <body>
     <main>
-        <!-- Join Room Form -->
-        <form class="form-join" id="joinRoomForm">
-            <input type="text" id="name" maxlength="8" placeholder="Your name" size="5" required>
-            <input type="text" id="room" placeholder="Chat room" size="5" required>
-            <button id="join" type="submit">Join</button>
-        </form>
+        <!-- Sidebar: Active Members -->
+        <aside id="sidebar">
+            <h4>Active Members</h4>
+            <ul id="activeMembersList"></ul>
+        </aside>
 
-        <!-- Chat Display -->
-        <ul class="chat-display" id="chatDisplay"></ul>
+        <!-- Chat Container -->
+        <section id="chatContainer">
+            <!-- Join Room Form -->
+            <form class="form-join" id="joinRoomForm">
+                <input type="text" id="name" maxlength="8" placeholder="Your name" size="5" required>
+                <input type="text" id="room" placeholder="Chat room" size="5" required>
+                <button id="join" type="submit">Join</button>
+            </form>
 
-        <!-- Display Users in the Current Room -->
-        <p class="user-list" id="userList"></p>
+            <!-- Chat Display -->
+            <ul class="chat-display" id="chatDisplay"></ul>
 
-        <!-- Typing Indicator -->
-        <p class="activity" id="typingIndicator"></p>
+            <!-- Typing Indicator -->
+            <p class="activity" id="typingIndicator"></p>
 
-        <!-- Send Message Form -->
-        <form class="form-msg" id="messageForm">
-            <input type="text" id="message" placeholder="Your message" required>
-            <button type="submit">Send</button>
-        </form>
+            <!-- Send Message Form -->
+            <form class="form-msg" id="messageForm">
+                <input type="text" id="message" placeholder="Your message" required>
+                <button type="submit">Send</button>
+            </form>
 
-        <!-- Upload Image Form -->
-        <form class="form-upload" id="imageUploadForm">
-            <input type="file" id="imageUpload" accept="image/*">
-            <button type="submit">Send Image</button>
-        </form>
+            <!-- Upload Image Form -->
+            <form class="form-upload" id="imageUploadForm">
+                <input type="file" id="imageUpload" accept="image/*">
+                <button type="submit">Send Image</button>
+            </form>
+        </section>
     </main>
 </body>
 
