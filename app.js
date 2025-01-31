@@ -2,6 +2,9 @@ const socket = io('https://back-cxwc.onrender.com'); // Backend URL
 let username = '';
 let currentRoom = '';
 let typingTimeout;
+let localStream;
+let peerConnection;
+const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
 // Handle connection error
 socket.on('connect_error', () => {
@@ -65,19 +68,16 @@ messageInput.addEventListener('input', () => {
 });
 
 socket.on('userTyping', (data) => {
-    const typingIndicator = document.getElementById('typingIndicator');
-    typingIndicator.textContent = `${data.name} is typing...`;
+    document.getElementById('typingIndicator').textContent = `${data.name} is typing...`;
 });
 
 socket.on('userStoppedTyping', () => {
-    const typingIndicator = document.getElementById('typingIndicator');
-    typingIndicator.textContent = '';
+    document.getElementById('typingIndicator').textContent = '';
 });
 
 // Display active members
 socket.on('roomUsers', ({ room, users }) => {
-    const activeMembersList = document.getElementById('activeMembersList');
-    activeMembersList.innerHTML = users.map(user => `<li>${user.name}</li>`).join('');
+    document.getElementById('activeMembersList').innerHTML = users.map(user => `<li>${user.name}</li>`).join('');
 });
 
 // Upload Image
@@ -107,3 +107,63 @@ setInterval(() => {
     fetch('https://back-cxwc.onrender.com/ping') // Correct URL
         .catch((err) => console.error('Backend ping failed:', err));
 }, 5 * 60 * 1000); // Ping every 5 minutes
+
+// --- AUDIO CALLING FEATURE ---
+// Request Audio Permissions
+async function startCall() {
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        document.getElementById('callStatus').textContent = 'Calling...';
+        socket.emit('callUser', { room: currentRoom });
+    } catch (error) {
+        console.error('Error accessing microphone:', error);
+    }
+}
+
+// Accept Incoming Call
+socket.on('incomingCall', async () => {
+    if (confirm('Incoming call. Accept?')) {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        socket.emit('answerCall', { room: currentRoom });
+    }
+});
+
+// Establish WebRTC Connection
+socket.on('callAccepted', async () => {
+    document.getElementById('callStatus').textContent = 'Connected';
+    peerConnection = new RTCPeerConnection(iceServers);
+    
+    // Add local stream
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+    peerConnection.ontrack = (event) => {
+        const audio = document.getElementById('remoteAudio');
+        audio.srcObject = event.streams[0];
+    };
+
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    socket.emit('offer', { offer, room: currentRoom });
+});
+
+socket.on('offer', async (data) => {
+    peerConnection = new RTCPeerConnection(iceServers);
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+    peerConnection.ontrack = (event) => {
+        const audio = document.getElementById('remoteAudio');
+        audio.srcObject = event.streams[0];
+    };
+
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    socket.emit('answer', { answer, room: currentRoom });
+});
+
+socket.on('answer', async (data) => {
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+});
+
+// Call Button Event
+document.getElementById('callButton').addEventListener('click', startCall);
