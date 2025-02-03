@@ -1,188 +1,122 @@
- const socket = io('https://back-cxwc.onrender.com'); // Backend URL
-let username = '';
-let currentRoom = '';
-let typingTimeout;
-let localStream;
-let peerConnections = {}; // Store peer connections
+const socket = io('https://your-backend-url.com'); // Adjust URL if needed
 
-// Handle connection error
-socket.on('connect_error', () => {
-    alert('The server is currently unavailable. Please try again later.');
-});
+let localStream;
+let peerConnection;
+const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+// Get user media (Microphone)
+navigator.mediaDevices.getUserMedia({ audio: true })
+    .then(stream => { 
+        localStream = stream; 
+        document.getElementById('localAudio').srcObject = localStream;
+    })
+    .catch(err => console.error('Error accessing microphone:', err));
 
 // Join Room
-document.querySelector('.form-join').addEventListener('submit', (event) => {
-    event.preventDefault();
-    username = document.getElementById('name').value.trim();
-    currentRoom = document.getElementById('room').value.trim();
+const joinRoomForm = document.getElementById('joinRoomForm');
+joinRoomForm.addEventListener('submit', (e) => {
+    e.preventDefault();
 
-    if (!username || !currentRoom) {
-        alert('Name and Room are required.');
-        return;
-    }
+    const name = document.getElementById('name').value;
+    const room = document.getElementById('room').value;
 
-    socket.emit('joinRoom', { name: username, room: currentRoom });
+    socket.emit('joinRoom', { name, room });
 });
 
-// Handle messages
-socket.on('message', (message) => {
-    const chatDisplay = document.querySelector('.chat-display');
-    const li = document.createElement('li');
-    li.innerHTML = `<strong>${message.name}</strong>: ${message.text} <span>${message.time}</span>`;
-    chatDisplay.appendChild(li);
-    chatDisplay.scrollTop = chatDisplay.scrollHeight; // Auto-scroll
-});
-
-// Load chat history
-socket.on('chatHistory', (history) => {
-    const chatDisplay = document.querySelector('.chat-display');
-    chatDisplay.innerHTML = '';
-    history.forEach((message) => {
-        const li = document.createElement('li');
-        li.innerHTML = `<strong>${message.name}</strong>: ${message.text} <span>${message.time}</span>`;
-        chatDisplay.appendChild(li);
-    });
-    chatDisplay.scrollTop = chatDisplay.scrollHeight; // Auto-scroll
-});
-
-// Send Message
-document.querySelector('.form-msg').addEventListener('submit', (event) => {
-    event.preventDefault();
-    const message = document.getElementById('message').value.trim();
-    if (!message) return;
-
-    socket.emit('message', { name: username, text: message, room: currentRoom });
+// Send message
+const messageForm = document.getElementById('messageForm');
+messageForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('name').value;
+    const text = document.getElementById('message').value;
+    const room = document.getElementById('room').value;
+    socket.emit('message', { name, text, room });
     document.getElementById('message').value = '';
 });
 
-// Handle typing indicator
-const messageInput = document.getElementById('message');
-messageInput.addEventListener('input', () => {
-    socket.emit('typing', { name: username, room: currentRoom });
+// Upload Image
+const imageUploadForm = document.getElementById('imageUploadForm');
+imageUploadForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    const file = document.getElementById('imageUpload').files[0];
+    formData.append('image', file);
 
-    clearTimeout(typingTimeout);
-    typingTimeout = setTimeout(() => {
-        socket.emit('stopTyping', { room: currentRoom });
-    }, 1000);
+    fetch('/upload', {
+        method: 'POST',
+        body: formData,
+    })
+    .then(res => res.json())
+    .then(data => {
+        const name = document.getElementById('name').value;
+        const room = document.getElementById('room').value;
+        socket.emit('imageMessage', { name, imageUrl: data.imageUrl, room });
+    })
+    .catch(err => console.error('Error uploading image:', err));
 });
 
-socket.on('userTyping', (data) => {
-    const typingIndicator = document.getElementById('typing-indicator');
-    typingIndicator.textContent = `${data.name} is typing...`;
+// Listen for new messages
+socket.on('message', (message) => {
+    const messageElement = document.createElement('li');
+    messageElement.innerHTML = `<strong>${message.name}</strong> <span>${message.time}</span>: ${message.text}`;
+    document.getElementById('chatDisplay').appendChild(messageElement);
 });
 
-socket.on('userStoppedTyping', () => {
-    const typingIndicator = document.getElementById('typing-indicator');
-    typingIndicator.textContent = '';
-});
-
-// Display active members
-socket.on('roomUsers', ({ room, users }) => {
+// Listen for active users
+socket.on('activeUsers', (users) => {
     const activeMembersList = document.getElementById('activeMembersList');
-    activeMembersList.innerHTML = users
-        .map(user => `<li><span class="user-name">${user.name}</span> <button class="call-btn" data-username="${user.name}">📞 Call</button></li>`)
-        .join('');
+    activeMembersList.innerHTML = ''; // Clear previous list
+    users.forEach(user => {
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `${user.name} <button class="call-btn" data-username="${user.name}">📞 Call</button>`;
+        activeMembersList.appendChild(listItem);
+    });
 
-    // Add event listeners for call buttons
+    // Call button functionality
     document.querySelectorAll('.call-btn').forEach(button => {
-        button.addEventListener('click', () => startCall(button.getAttribute('data-username')));
+        button.addEventListener('click', () => {
+            const userToCall = button.getAttribute('data-username');
+            peerConnection = new RTCPeerConnection(configuration);
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+            peerConnection.onicecandidate = event => {
+                if (event.candidate) {
+                    socket.emit('callUser', { to: userToCall, signal: event.candidate, from: socket.id });
+                }
+            };
+
+            peerConnection.createOffer().then(offer => {
+                peerConnection.setLocalDescription(offer);
+                socket.emit('callUser', { to: userToCall, signal: offer, from: socket.id });
+            });
+        });
     });
 });
 
-// Upload Image
-document.querySelector('.form-upload').addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const fileInput = document.getElementById('imageUpload');
-    const formData = new FormData();
-    formData.append('image', fileInput.files[0]);
+// Receive Call
+socket.on('incomingCall', ({ from, signal }) => {
+    peerConnection = new RTCPeerConnection(configuration);
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
-    try {
-        const response = await fetch('https://back-cxwc.onrender.com/upload', {
-            method: 'POST',
-            body: formData,
-        });
+    peerConnection.onicecandidate = event => {
+        if (event.candidate) {
+            socket.emit('answerCall', { to: from, signal: event.candidate });
+        }
+    };
 
-        if (!response.ok) throw new Error('Failed to upload image.');
-
-        const { imageUrl } = await response.json();
-        socket.emit('imageMessage', { name: username, imageUrl, room: currentRoom });
-    } catch (error) {
-        console.error('Error uploading image:', error);
-    }
+    peerConnection.setRemoteDescription(signal);
+    peerConnection.createAnswer().then(answer => {
+        peerConnection.setLocalDescription(answer);
+        socket.emit('answerCall', { to: from, signal: answer });
+    });
 });
 
-// Fix ping interval bug
-setInterval(() => {
-    fetch('https://back-cxwc.onrender.com/ping')
-        .catch((err) => console.error('Backend ping failed:', err));
-}, 5 * 60 * 1000); // Ping every 5 minutes
-
-// WebRTC Audio Call
-async function startCall(targetUser) {
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-        const peerConnection = new RTCPeerConnection();
-        peerConnections[targetUser] = peerConnection;
-
-        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-        peerConnection.onicecandidate = event => {
-            if (event.candidate) {
-                socket.emit('iceCandidate', { targetUser, candidate: event.candidate });
-            }
-        };
-
-        peerConnection.ontrack = event => {
-            document.getElementById('remoteAudio').srcObject = event.streams[0];
-        };
-
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-
-        socket.emit('callUser', { targetUser, offer });
-    } catch (error) {
-        console.error('Error starting call:', error);
-    }
-}
-
-socket.on('receiveCall', async ({ caller, offer }) => {
-    try {
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-        const peerConnection = new RTCPeerConnection();
-        peerConnections[caller] = peerConnection;
-
-        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-        peerConnection.onicecandidate = event => {
-            if (event.candidate) {
-                socket.emit('iceCandidate', { targetUser: caller, candidate: event.candidate });
-            }
-        };
-
-        peerConnection.ontrack = event => {
-            document.getElementById('remoteAudio').srcObject = event.streams[0];
-        };
-
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-
-        socket.emit('answerCall', { caller, answer });
-    } catch (error) {
-        console.error('Error answering call:', error);
-    }
+// Accept Call
+socket.on('callAccepted', signal => {
+    peerConnection.setRemoteDescription(signal);
+    const remoteAudio = document.getElementById('remoteAudio');
+    peerConnection.ontrack = event => {
+        remoteAudio.srcObject = event.streams[0];
+    };
 });
 
-socket.on('callAccepted', async ({ answer, targetUser }) => {
-    if (peerConnections[targetUser]) {
-        await peerConnections[targetUser].setRemoteDescription(new RTCSessionDescription(answer));
-    }
-});
-
-socket.on('iceCandidate', ({ candidate, targetUser }) => {
-    if (peerConnections[targetUser]) {
-        peerConnections[targetUser].addIceCandidate(new RTCIceCandidate(candidate));
-    }
-});
