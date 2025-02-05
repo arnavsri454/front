@@ -1,4 +1,4 @@
-const socket = io('https://your-backend-url.com'); // Adjust URL if needed
+const socket = io('https://back-cxwc.onrender.com'); // Adjust URL if needed
 
 let localStream;
 let peerConnection;
