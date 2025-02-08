@@ -15,9 +15,11 @@
         <!-- Sidebar: Active Members -->
         <aside id="active-members-container">
             <h4>Active Members</h4>
-            <ul id="activeMembersList"></ul>
+            <ul id="activeMembersList"></ul> <!-- ✅ Keep only ONE active members list -->
         </aside>
-<audio id="localAudio" autoplay controls></audio>
+
+        <!-- Local Audio (User's Own Microphone) -->
+        <audio id="localAudio" autoplay controls></audio> <!-- ✅ Keep for self-audio -->
 
         <!-- Chat Container -->
         <section id="chat-container">
@@ -47,10 +49,10 @@
             </form>
         </section>
 
-        <!-- Active Members & Call Buttons -->
-        <aside>
+        <!-- Call Section -->
+        <aside id="call-section">
             <h4>Call a Member</h4>
-            <ul id="activeMembersList">
+            <ul id="callMembersList"> <!-- ✅ Use a different ID for calling -->
                 <!-- Example User -->
                 <li>
                     <span class="user-name">John</span>
@@ -58,11 +60,7 @@
                 </li>
             </ul>
         </aside>
-
-        <!-- Audio Call Elements -->
-        <audio id="remoteAudio" autoplay></audio>
     </main>
 </body>
 
 </html>
-
