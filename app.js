@@ -4,6 +4,8 @@ let localStream;
 const peerConnections = {}; // Store connections for each peer
 const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
+let currentRoom = null; // Track joined room
+
 // Get user media (Microphone)
 navigator.mediaDevices.getUserMedia({ audio: true })
     .then(stream => { 
@@ -22,7 +24,15 @@ document.getElementById('joinRoomForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const name = document.getElementById('name').value;
     const room = document.getElementById('room').value;
+
+    if (room.trim() === "") {
+        alert("Please enter a room name to join.");
+        return;
+    }
+
+    currentRoom = room; // Store the current room
     socket.emit('joinRoom', { name, room });
+    console.log(`Joined room: ${room}`);
 });
 
 // Handle Chat Messages
@@ -30,8 +40,13 @@ document.getElementById('messageForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const name = document.getElementById('name').value;
     const text = document.getElementById('message').value;
-    const room = document.getElementById('room').value;
-    socket.emit('message', { name, text, room });
+
+    if (!currentRoom) {
+        alert("You must join a room first.");
+        return;
+    }
+
+    socket.emit('message', { name, text, room: currentRoom });
     document.getElementById('message').value = '';
 });
 
@@ -42,13 +57,21 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Start Group Call
+// Start Group Call (Only within the joined room)
 function startGroupCall() {
-    socket.emit('startGroupCall');
+    if (!currentRoom) {
+        alert("You must join a room first.");
+        return;
+    }
+
+    socket.emit('startGroupCall', { room: currentRoom });
+    console.log(`Starting group call in room: ${currentRoom}`);
 }
 
 // Handle Incoming Group Call Request
-socket.on('groupCallStarted', ({ from, roomUsers }) => {
+socket.on('groupCallStarted', ({ roomUsers }) => {
+    if (!currentRoom) return;
+
     roomUsers.forEach(user => {
         if (user.id !== socket.id && !peerConnections[user.id]) {
             initiatePeerConnection(user.id);
@@ -100,6 +123,8 @@ function initiatePeerConnection(peerId) {
 
 // Handle Offer from Peer
 socket.on('receiveOffer', async ({ from, offer }) => {
+    if (!currentRoom) return;
+
     const peerConnection = initiatePeerConnection(from);
     await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
 
@@ -111,11 +136,15 @@ socket.on('receiveOffer', async ({ from, offer }) => {
 
 // Handle Answer from Peer
 socket.on('receiveAnswer', ({ from, answer }) => {
+    if (!currentRoom) return;
+
     peerConnections[from]?.setRemoteDescription(new RTCSessionDescription(answer));
 });
 
 // Handle Incoming ICE Candidate
 socket.on('receiveICE', ({ from, candidate }) => {
+    if (!currentRoom) return;
+
     peerConnections[from]?.addIceCandidate(new RTCIceCandidate(candidate));
 });
 
@@ -128,6 +157,6 @@ socket.on('userDisconnected', ({ userId }) => {
 
     const remoteAudio = document.getElementById(`remoteAudio-${userId}`);
     if (remoteAudio) {
-        remoteAudio.parentNode.removeChild(remoteAudio); // Ensure proper removal
+        remoteAudio.parentNode.removeChild(remoteAudio);
     }
 });
