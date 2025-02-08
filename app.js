@@ -1,7 +1,7 @@
-const socket = io('https://back-cxwc.onrender.com'); // Adjust URL if needed
+  const socket = io('https://back-cxwc.onrender.com'); // Adjust URL if needed
 
 let localStream;
-let peerConnection;
+const peerConnections = {}; // Store connections for each peer
 const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
 
 // Get user media (Microphone)
@@ -13,19 +13,15 @@ navigator.mediaDevices.getUserMedia({ audio: true })
     .catch(err => console.error('Error accessing microphone:', err));
 
 // Join Room
-const joinRoomForm = document.getElementById('joinRoomForm');
-joinRoomForm.addEventListener('submit', (e) => {
+document.getElementById('joinRoomForm').addEventListener('submit', (e) => {
     e.preventDefault();
-
     const name = document.getElementById('name').value;
     const room = document.getElementById('room').value;
-
     socket.emit('joinRoom', { name, room });
 });
 
-// Send message
-const messageForm = document.getElementById('messageForm');
-messageForm.addEventListener('submit', (e) => {
+// Handle Chat Messages
+document.getElementById('messageForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const name = document.getElementById('name').value;
     const text = document.getElementById('message').value;
@@ -34,89 +30,96 @@ messageForm.addEventListener('submit', (e) => {
     document.getElementById('message').value = '';
 });
 
-// Upload Image
-const imageUploadForm = document.getElementById('imageUploadForm');
-imageUploadForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const formData = new FormData();
-    const file = document.getElementById('imageUpload').files[0];
-    formData.append('image', file);
-
-    fetch('/upload', {
-        method: 'POST',
-        body: formData,
-    })
-    .then(res => res.json())
-    .then(data => {
-        const name = document.getElementById('name').value;
-        const room = document.getElementById('room').value;
-        socket.emit('imageMessage', { name, imageUrl: data.imageUrl, room });
-    })
-    .catch(err => console.error('Error uploading image:', err));
+// Handle Call Button Click
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('call-btn')) {
+        startGroupCall();
+    }
 });
 
-// Listen for new messages
-socket.on('message', (message) => {
-    const messageElement = document.createElement('li');
-    messageElement.innerHTML = `<strong>${message.name}</strong> <span>${message.time}</span>: ${message.text}`;
-    document.getElementById('chatDisplay').appendChild(messageElement);
-});
+// Start Group Call
+function startGroupCall() {
+    socket.emit('startGroupCall');
+}
 
-// Listen for active users
-socket.on('activeUsers', (users) => {
-    const activeMembersList = document.getElementById('activeMembersList');
-    activeMembersList.innerHTML = ''; // Clear previous list
-    users.forEach(user => {
-        const listItem = document.createElement('li');
-        listItem.innerHTML = `${user.name} <button class="call-btn" data-username="${user.name}">📞 Call</button>`;
-        activeMembersList.appendChild(listItem);
-    });
-
-    // Call button functionality
-    document.querySelectorAll('.call-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            const userToCall = button.getAttribute('data-username');
-            peerConnection = new RTCPeerConnection(configuration);
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-            peerConnection.onicecandidate = event => {
-                if (event.candidate) {
-                    socket.emit('callUser', { to: userToCall, signal: event.candidate, from: socket.id });
-                }
-            };
-
-            peerConnection.createOffer().then(offer => {
-                peerConnection.setLocalDescription(offer);
-                socket.emit('callUser', { to: userToCall, signal: offer, from: socket.id });
-            });
-        });
+// Handle Incoming Group Call Request
+socket.on('groupCallStarted', ({ from, roomUsers }) => {
+    roomUsers.forEach(user => {
+        if (user.id !== socket.id && !peerConnections[user.id]) {
+            initiatePeerConnection(user.id);
+        }
     });
 });
 
-// Receive Call
-socket.on('incomingCall', ({ from, signal }) => {
-    peerConnection = new RTCPeerConnection(configuration);
+// Create a New Peer Connection
+function initiatePeerConnection(peerId) {
+    const peerConnection = new RTCPeerConnection(configuration);
+    peerConnections[peerId] = peerConnection;
+
+    // Add local audio track
     localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
+    // Handle ICE candidates
     peerConnection.onicecandidate = event => {
         if (event.candidate) {
-            socket.emit('answerCall', { to: from, signal: event.candidate });
+            socket.emit('sendICE', { to: peerId, candidate: event.candidate });
         }
     };
 
-    peerConnection.setRemoteDescription(signal);
-    peerConnection.createAnswer().then(answer => {
-        peerConnection.setLocalDescription(answer);
-        socket.emit('answerCall', { to: from, signal: answer });
-    });
-});
-
-// Accept Call
-socket.on('callAccepted', signal => {
-    peerConnection.setRemoteDescription(signal);
-    const remoteAudio = document.getElementById('remoteAudio');
+    // Handle incoming audio stream
     peerConnection.ontrack = event => {
+        let remoteAudio = document.getElementById(`remoteAudio-${peerId}`);
+        if (!remoteAudio) {
+            remoteAudio = document.createElement('audio');
+            remoteAudio.id = `remoteAudio-${peerId}`;
+            remoteAudio.controls = true;
+            document.body.appendChild(remoteAudio);
+        }
         remoteAudio.srcObject = event.streams[0];
     };
+
+    // Create and send offer
+    peerConnection.createOffer()
+        .then(offer => {
+            peerConnection.setLocalDescription(offer);
+            socket.emit('sendOffer', { to: peerId, offer });
+        });
+
+    return peerConnection;
+}
+
+// Handle Offer from Peer
+socket.on('receiveOffer', async ({ from, offer }) => {
+    const peerConnection = initiatePeerConnection(from);
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+
+    socket.emit('sendAnswer', { to: from, answer });
+});
+
+// Handle Answer from Peer
+socket.on('receiveAnswer', ({ from, answer }) => {
+    peerConnections[from]?.setRemoteDescription(new RTCSessionDescription(answer));
+});
+
+// Handle Incoming ICE Candidate
+socket.on('receiveICE', ({ from, candidate }) => {
+    peerConnections[from]?.addIceCandidate(new RTCIceCandidate(candidate));
+});
+
+// Handle Disconnection
+socket.on('userDisconnected', ({ userId }) => {
+    if (peerConnections[userId]) {
+        peerConnections[userId].close();
+        delete peerConnections[userId];
+
+        // Remove audio element
+        const remoteAudio = document.getElementById(`remoteAudio-${userId}`);
+        if (remoteAudio) {
+            remoteAudio.remove();
+        }
+    }
 });
 
