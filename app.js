@@ -1,4 +1,4 @@
-  const socket = io('https://back-cxwc.onrender.com'); // Adjust URL if needed
+const socket = io('https://back-cxwc.onrender.com'); // Adjust URL if needed
 
 let localStream;
 const peerConnections = {}; // Store connections for each peer
@@ -8,7 +8,12 @@ const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
 navigator.mediaDevices.getUserMedia({ audio: true })
     .then(stream => { 
         localStream = stream; 
-        document.getElementById('localAudio').srcObject = localStream;
+        const localAudio = document.getElementById('localAudio');
+        if (localAudio) {
+            localAudio.srcObject = localStream;
+        } else {
+            console.error("Element with ID 'localAudio' not found in the DOM.");
+        }
     })
     .catch(err => console.error('Error accessing microphone:', err));
 
@@ -53,6 +58,11 @@ socket.on('groupCallStarted', ({ from, roomUsers }) => {
 
 // Create a New Peer Connection
 function initiatePeerConnection(peerId) {
+    if (peerConnections[peerId]) {
+        console.warn(`Peer connection already exists for ${peerId}`);
+        return peerConnections[peerId];
+    }
+
     const peerConnection = new RTCPeerConnection(configuration);
     peerConnections[peerId] = peerConnection;
 
@@ -114,12 +124,10 @@ socket.on('userDisconnected', ({ userId }) => {
     if (peerConnections[userId]) {
         peerConnections[userId].close();
         delete peerConnections[userId];
+    }
 
-        // Remove audio element
-        const remoteAudio = document.getElementById(`remoteAudio-${userId}`);
-        if (remoteAudio) {
-            remoteAudio.remove();
-        }
+    const remoteAudio = document.getElementById(`remoteAudio-${userId}`);
+    if (remoteAudio) {
+        remoteAudio.parentNode.removeChild(remoteAudio); // Ensure proper removal
     }
 });
-
