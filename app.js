@@ -10,12 +10,12 @@ let currentRoom = null; // Track joined room
 navigator.mediaDevices.getUserMedia({ audio: true })
     .then(stream => { 
         localStream = stream; 
-        localStream.getAudioTracks()[0].enabled = true; // Keep mic on
+        localStream.getAudioTracks()[0].enabled = true; // Ensure mic is on
 
         const localAudio = document.getElementById('localAudio');
         if (localAudio) {
             localAudio.srcObject = localStream;
-            localAudio.muted = true; // Prevent local audio feedback
+            localAudio.muted = true; // 🔇 Prevent echo by muting local playback
         }
     })
     .catch(err => console.error('Error accessing microphone:', err));
@@ -31,24 +31,9 @@ document.getElementById('joinRoomForm').addEventListener('submit', (e) => {
         return;
     }
 
-    currentRoom = room; // Store the current room
+    currentRoom = room;
     socket.emit('joinRoom', { name, room });
     console.log(`Joined room: ${room}`);
-});
-
-// Handle Chat Messages
-document.getElementById('messageForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('name').value;
-    const text = document.getElementById('message').value;
-
-    if (!currentRoom) {
-        alert("You must join a room first.");
-        return;
-    }
-
-    socket.emit('message', { name, text, room: currentRoom });
-    document.getElementById('message').value = '';
 });
 
 // Handle Call Button Click
@@ -102,16 +87,14 @@ function initiatePeerConnection(peerId) {
 
     // Handle incoming audio stream
     peerConnection.ontrack = event => {
-        if (event.streams[0].id === localStream.id) {
-            return; // Ignore own stream to prevent echo
-        }
+        if (event.streams[0].id === localStream.id) return; // Ignore own stream
 
         let remoteAudio = document.getElementById(`remoteAudio-${peerId}`);
         if (!remoteAudio) {
             remoteAudio = document.createElement('audio');
             remoteAudio.id = `remoteAudio-${peerId}`;
             remoteAudio.controls = true;
-            remoteAudio.autoplay = true; // Play automatically
+            remoteAudio.autoplay = true;
             document.body.appendChild(remoteAudio);
         }
         remoteAudio.srcObject = event.streams[0];
@@ -120,8 +103,10 @@ function initiatePeerConnection(peerId) {
     // Create and send offer
     peerConnection.createOffer()
         .then(offer => {
-            peerConnection.setLocalDescription(offer);
-            socket.emit('sendOffer', { to: peerId, offer });
+            return peerConnection.setLocalDescription(offer);
+        })
+        .then(() => {
+            socket.emit('sendOffer', { to: peerId, offer: peerConnection.localDescription });
         });
 
     return peerConnection;
