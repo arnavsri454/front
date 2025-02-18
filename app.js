@@ -10,11 +10,12 @@ let currentRoom = null; // Track joined room
 navigator.mediaDevices.getUserMedia({ audio: true })
     .then(stream => { 
         localStream = stream; 
+        localStream.getAudioTracks()[0].enabled = true; // Keep mic on
+
         const localAudio = document.getElementById('localAudio');
         if (localAudio) {
             localAudio.srcObject = localStream;
-        } else {
-            console.error("Element with ID 'localAudio' not found in the DOM.");
+            localAudio.muted = true; // Prevent local audio feedback
         }
     })
     .catch(err => console.error('Error accessing microphone:', err));
@@ -101,11 +102,16 @@ function initiatePeerConnection(peerId) {
 
     // Handle incoming audio stream
     peerConnection.ontrack = event => {
+        if (event.streams[0].id === localStream.id) {
+            return; // Ignore own stream to prevent echo
+        }
+
         let remoteAudio = document.getElementById(`remoteAudio-${peerId}`);
         if (!remoteAudio) {
             remoteAudio = document.createElement('audio');
             remoteAudio.id = `remoteAudio-${peerId}`;
             remoteAudio.controls = true;
+            remoteAudio.autoplay = true; // Play automatically
             document.body.appendChild(remoteAudio);
         }
         remoteAudio.srcObject = event.streams[0];
