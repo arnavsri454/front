@@ -15,11 +15,11 @@
         <!-- Sidebar: Active Members -->
         <aside id="active-members-container">
             <h4>Active Members</h4>
-            <ul id="activeMembersList"></ul> <!-- ✅ Keep only ONE active members list -->
+            <ul id="activeMembersList"></ul> <!-- ✅ Auto-updated from JS -->
         </aside>
 
         <!-- Local Audio (User's Own Microphone) -->
-        <audio id="localAudio" autoplay controls></audio> <!-- ✅ Keep for self-audio -->
+        <audio id="localAudio" autoplay controls muted></audio> <!-- ✅ Prevent echo -->
 
         <!-- Chat Container -->
         <section id="chat-container">
@@ -51,16 +51,13 @@
 
         <!-- Call Section -->
         <aside id="call-section">
-            <h4>Call a Member</h4>
-            <ul id="callMembersList"> <!-- ✅ Use a different ID for calling -->
-                <!-- Example User -->
-                <li>
-                    <span class="user-name">John</span>
-                    <button class="call-btn" data-username="John">📞 Call</button>
-                </li>
+            <h4>Call Members</h4>
+            <button id="startGroupCall">📞 Start Group Call</button> <!-- ✅ New group call button -->
+            <ul id="callMembersList"> <!-- ✅ Auto-filled from JS -->
             </ul>
         </aside>
     </main>
 </body>
 
 </html>
+
